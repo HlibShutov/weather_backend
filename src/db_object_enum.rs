@@ -1,7 +1,5 @@
 use crate::{
-    db_mock::DataBaseMock,
-    db_object::{DataBase, UserEnum},
-    Errors, User,
+    db_mock::DataBaseMock, db_object::DataBase, Errors, Record,
 };
 
 #[derive(Clone, Debug)]
@@ -14,34 +12,16 @@ impl DataObjectEnum {
     pub fn new() -> Self {
         DataObjectEnum::DataBase(DataBase::new())
     }
-    pub fn add_entry(&mut self, user: User, new_id: Option<u32>) -> u32 {
+    pub fn add_entry(&mut self, user: Record) {
         match self {
-            Self::DataBase(database) => database.add_entry(user, new_id),
-            Self::DataBaseMock(database_mock) => database_mock.add_entry(user, new_id),
+            Self::DataBase(database) => database.add_entry(user),
+            Self::DataBaseMock(database_mock) => database_mock.add_entry(user),
         }
     }
-    pub fn remove_entry(&mut self, id: u32) -> Result<usize, Errors> {
+    pub fn get_by_timestamp(&mut self, timestamp: String) -> Result<&Record, Errors> {
         match self {
-            Self::DataBase(database) => database.remove_entry(id),
-            Self::DataBaseMock(database_mock) => database_mock.remove_entry(id),
-        }
-    }
-    pub fn change_user(&mut self, id: u32, data: Vec<UserEnum>) -> Result<usize, Errors> {
-        match self {
-            Self::DataBase(database) => database.change_user(id, data),
-            Self::DataBaseMock(database_mock) => database_mock.change_user(id, data),
-        }
-    }
-    pub fn get_all(&mut self) -> &Vec<User> {
-        match self {
-            Self::DataBase(database) => database.get_all(),
-            Self::DataBaseMock(database_mock) => database_mock.get_all(),
-        }
-    }
-    pub fn get_one(&mut self, id: u32) -> Result<&User, Errors> {
-        match self {
-            Self::DataBase(database) => database.get_one(id),
-            Self::DataBaseMock(database_mock) => database_mock.get_one(id),
+            Self::DataBase(database) => database.get_by_timestamp(timestamp),
+            Self::DataBaseMock(database_mock) => database_mock.get_by_timestamp(timestamp),
         }
     }
 }

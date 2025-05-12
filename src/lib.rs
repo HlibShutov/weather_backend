@@ -47,7 +47,7 @@ fn handle_connection(mut stream: TcpStream, db: Arc<Mutex<DataObjectEnum>>) {
 
     let content_length = request
         .lines()
-        .find(|line| line.starts_with("Content-Length:"))
+        .find(|line| line.starts_with("content-length:"))
         .and_then(|line| line.split(" ").nth(1))
         .and_then(|len| len.parse::<usize>().ok())
         .unwrap_or(0);
@@ -63,42 +63,18 @@ fn handle_connection(mut stream: TcpStream, db: Arc<Mutex<DataObjectEnum>>) {
     let controller = UserController::new(db);
 
     let (code, contents) = match (method, path) {
-        ("GET", "/users") => (Some(200), controller.show_users()),
-        ("GET", path) if path.starts_with("/users/") => {
-            let id = path.trim_start_matches("/users/");
-            if let Ok(user_id) = id.parse::<u32>() {
-                (Some(200), controller.show_user(user_id))
-            } else {
-                (None, Err(Errors::UserError(400)))
-            }
+        ("GET", path) if path.starts_with("/weather/") => {
+            let timestamp = path.trim_start_matches("/weather/");
+            println!("{}", timestamp);
+            (Some(200), controller.show_timestamp(timestamp))
         }
-        ("POST", "/users") => {
-            println!("{}", data);
-            match serde_json::from_str::<HashMap<String, String>>(data.as_str()) {
-                Ok(user) => {
-                    let id = controller.add_user(user, None);
-                    (Some(201), id)
+        ("POST", "/weather") => {
+            match serde_json::from_str::<Record>(data.as_str()) {
+                Ok(record) => {
+                    let result = controller.add_record(record);
+                    (Some(201), result)
                 }
                 Err(_) => (None, Err(Errors::UserError(400))),
-            }
-        }
-        ("PATCH", path) if path.starts_with("/users/") => {
-            let id = path.trim_start_matches("/users/");
-            if let Ok(user_id) = id.parse::<u32>() {
-                match serde_json::from_str::<HashMap<String, String>>(data.as_str()) {
-                    Ok(user) => (Some(204), controller.change_user_data(user_id, user)),
-                    Err(_) => (None, Err(Errors::UserError(400))),
-                }
-            } else {
-                (None, Err(Errors::UserError(400)))
-            }
-        }
-        ("DELETE", path) if path.starts_with("/users/") => {
-            let id = path.trim_start_matches("/users/");
-            if let Ok(user_id) = id.parse::<u32>() {
-                (Some(204), controller.delete_user(user_id))
-            } else {
-                (None, Err(Errors::UserError(400)))
             }
         }
         _ => (None, Err(Errors::UserError(404))),
@@ -127,19 +103,11 @@ fn handle_connection(mut stream: TcpStream, db: Arc<Mutex<DataObjectEnum>>) {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
-pub struct User {
-    pub id: u32,
-    pub name: String,
-    pub lastname: String,
-    pub birth_year: u16,
-    pub group: UserGroup,
-}
-
-#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
-pub enum UserGroup {
-    User,
-    Premium,
-    Admin,
+pub struct Record {
+    pub time: String,
+    pub pm10: f64,
+    pub dust: f64,
+    pub carbon_dioxide: f64,
 }
 
 pub struct ThreadPool {
