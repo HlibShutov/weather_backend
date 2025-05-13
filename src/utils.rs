@@ -1,7 +1,4 @@
-use std::{
-    collections::HashMap,
-    sync::{Arc, Mutex},
-};
+use std::sync::{Arc, Mutex};
 
 use crate::db_object_enum::DataObjectEnum;
 use crate::Record;
@@ -34,8 +31,12 @@ impl UserController {
         data: Record,
     ) -> Result<String, Errors> {
         let mut records = self.database.lock().map_err(|_| Errors::ServerError(500))?;
-        records.add_entry(data);
-        Ok("0".to_string())
+        if data.validate() {
+            records.add_entry(data);
+            Ok("0".to_string())
+        } else {
+            Err(Errors::UserError(400))
+        }
     }
 }
 

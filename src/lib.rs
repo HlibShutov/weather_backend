@@ -1,5 +1,4 @@
 use std::{
-    collections::HashMap,
     sync::{mpsc, Arc, Mutex},
     thread,
 };
@@ -14,6 +13,7 @@ pub mod db_object;
 pub mod db_object_enum;
 mod utils;
 use db_object_enum::DataObjectEnum;
+use regex::Regex;
 use utils::*;
 
 use serde::{Deserialize, Serialize};
@@ -108,6 +108,13 @@ pub struct Record {
     pub pm10: f64,
     pub dust: f64,
     pub carbon_dioxide: f64,
+}
+
+impl Record {
+    fn validate(&self) -> bool {
+        let re = Regex::new(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$").unwrap();
+        re.is_match(self.time.as_str()) && self.pm10 >= 0.0 && self.dust >= 0.0 && self.carbon_dioxide >= 0.0
+    }
 }
 
 pub struct ThreadPool {
